@@ -84,6 +84,7 @@ contract BRcommunity is ERC4907Rent, Pausable, Ownable {
     }
 
     function rentAcess(uint256 tokenId, address user, uint64 expires) public{
+        require(ownerOf(tokenId)==msg.sender, "only owner NFT");
         setUser(tokenId, user,expires);
     }
 
