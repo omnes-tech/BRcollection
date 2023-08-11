@@ -29,15 +29,17 @@ contract BRcommunity is ERC4907Rent, Pausable, Ownable {
     //acess rules 
     uint256 monthlyFee;
     uint256 constant timeForpay = 30 days;
-
+    uint256 constant limitRent = 3;
     struct Infopayment{
         uint256 timepay;
         uint256 valuepay;
     }
 
     mapping(uint256 => Infopayment) public monthlyPayment;
+    mapping(address => uint256) limitRentcont;
     event MonthlyPayment(uint256 indexed tokenId, address indexed user, uint256 time);
     event Accessdate(address indexed user, uint256 time);
+    error completePayment();
 
 
     constructor(
@@ -70,6 +72,7 @@ contract BRcommunity is ERC4907Rent, Pausable, Ownable {
         "you do not have access NFTs or your term to use has expired");
         require(block.timestamp <= monthlyPayment[tokenId].timepay + timeForpay, 
         "It is only possible to access the platform by paying the monthly fee.");
+        if(monthlyPayment[tokenId].valuepay < monthlyFee) revert completePayment();
         emit Accessdate(msg.sender,block.timestamp);
     }
 
@@ -85,6 +88,8 @@ contract BRcommunity is ERC4907Rent, Pausable, Ownable {
 
     function rentAcess(uint256 tokenId, address user, uint64 expires) public{
         require(ownerOf(tokenId)==msg.sender, "only owner NFT");
+        require(limitRentcont[msg.sender] >= limitRent, "rent limit is 3");
+        limitRentcont[msg.sender]++;
         setUser(tokenId, user,expires);
     }
 
