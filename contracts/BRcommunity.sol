@@ -67,30 +67,33 @@ contract BRcommunity is ERC4907Rent, Pausable, Ownable {
 
     //acess rules
 
-    function acessPlatform(uint tokenId) external {
+    function acessPlatform(uint tokenId) external returns(bool){
         require(balanceOf(msg.sender) >= 1 || userOf(tokenId) == msg.sender,
         "you do not have access NFTs or your term to use has expired");
         require(block.timestamp <= monthlyPayment[tokenId].timepay + timeForpay, 
         "It is only possible to access the platform by paying the monthly fee.");
         if(monthlyPayment[tokenId].valuepay < monthlyFee) revert completePayment();
         emit Accessdate(msg.sender,block.timestamp);
+
+        return true;
     }
 
-    function payMonthlyFee(uint tokenId) payable external{
+    function payMonthlyFee(uint tokenId) payable external returns(bool){
         require(_exists(tokenId));
         require(msg.value >= monthlyFee, "monthly fee is not correct");
         monthlyPayment[tokenId] =  Infopayment({
             timepay: block.timestamp,
-            valuepay: 0
+            valuepay: msg.value
         });
         emit MonthlyPayment(tokenId,msg.sender,block.timestamp);
+
+        return true;
     }
 
-    function rentAcess(uint256 tokenId, address user, uint64 expires) public{
-        require(ownerOf(tokenId)==msg.sender, "only owner NFT");
+    function setUser(uint256 tokenId, address user, uint64 expires) public override {
         require(limitRentcont[msg.sender] >= limitRent, "rent limit is 3");
+        super.setUser(tokenId, user, expires);
         limitRentcont[msg.sender]++;
-        setUser(tokenId, user,expires);
     }
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
