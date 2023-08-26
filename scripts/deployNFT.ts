@@ -1,13 +1,13 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const colletion = "https://ipfs.io/ipfs/bafybeihgrbjb4llwttmlbv4cg3whhyxywodw3g4h667eh5eaureq3bzaaq/collection.json";
-  const General = "https://ipfs.io/ipfs/bafybeihgrbjb4llwttmlbv4cg3whhyxywodw3g4h667eh5eaureq3bzaaq/base.json";
-  const totalsupply = 10000;
-  const nome = "BRcollection";
-  const symbol = "BRC";
+  const colletion = "https://ipfs.io/ipfs/bafybeid5ahgxf36tvvizvglgcdszh4j65aj3zths36ne7tb7iincfpv2le/collection.json";
+  const General = "https://ipfs.io/ipfs/bafybeid5ahgxf36tvvizvglgcdszh4j65aj3zths36ne7tb7iincfpv2le/general.json";
+  const totalsupply = 1000;
+  const nome = "BRfraternity";
+  const symbol = "BRF";
 
-  const NFT = await ethers.getContractFactory("BRcommunity");
+  const NFT = await ethers.getContractFactory("BRfraternity");
   const nft = await NFT.deploy(nome,symbol,General,colletion,totalsupply);
 
   await nft.deployed();

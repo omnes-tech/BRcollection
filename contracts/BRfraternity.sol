@@ -13,7 +13,8 @@ error MaxSupply();
 error NonExistentTokenURI();
 error WithdrawTransfer();
 
-contract BRcommunity is ERC4907Rent, Pausable, Ownable {
+/// omnes-tech (afonsod.eth e Gwdeps)
+contract BRfraternity is ERC4907Rent, Pausable, Ownable {
 
     using Strings for uint256;
     string public generalURI;
@@ -28,7 +29,7 @@ contract BRcommunity is ERC4907Rent, Pausable, Ownable {
 
     //acess rules 
     uint256 public monthlyFee;
-    uint256 constant timeForpay = 30 days;
+    uint256 public timeForpay;
     uint256 constant limitRent = 3;
     struct Infopayment{
         uint256 timepay;
@@ -37,9 +38,10 @@ contract BRcommunity is ERC4907Rent, Pausable, Ownable {
 
     mapping(uint256 => Infopayment) public monthlyPayment;
     mapping(address => uint256) limitRentcont;
+    mapping(address => bool) lifetimeAcess;
     event MonthlyPayment(uint256 indexed tokenId, address indexed user, uint256 time);
     event Accessdate(address indexed user, uint256 time);
-    error completePayment();
+    
 
 
     constructor(
@@ -54,27 +56,44 @@ contract BRcommunity is ERC4907Rent, Pausable, Ownable {
         TOTAL_SUPPLY = totalsupply;
     }
 
-    function mint() external payable whenNotPaused {
+    function mint() external payable whenNotPaused returns (uint256){
         // `_mint`'s second argument now takes in a `quantity`, not a `tokenId`
         if (msg.value < price - ((price * maxDiscount) / 10000)) {
             revert MintPriceNotPaid();
         }
-        _mint(msg.sender, 1);
+        uint256 newTokenId = _nextTokenId() + 1;
+        require(newTokenId <= TOTAL_SUPPLY, "Max supply reached");
+        _safeMint(msg.sender, 1);
+        return newTokenId;
     }
 
-    function mintOwner(address _to) external payable onlyOwner{
-        // `_mint`'s second argument now takes in a `quantity`, not a `tokenId`.
-        _mint(_to, 1);
+    function mintTo(address recipient) public payable whenNotPaused returns (uint256) {
+        if (msg.value < price - ((price * maxDiscount) / 10000)) {
+            revert MintPriceNotPaid();
+        }
+        uint256 newTokenId = _nextTokenId() + 1;
+        require(newTokenId  <= TOTAL_SUPPLY, "Max supply reached");
+        _safeMint(recipient, 1);
+        return newTokenId;
+    }
+
+    function mintOwner(address _to) external payable onlyOwner returns (uint256){
+        uint256 newTokenId = _nextTokenId() + 1;
+        require(newTokenId <= TOTAL_SUPPLY, "Max supply reached");
+        _safeMint(_to, 1);
+        return newTokenId;
     }
 
     //acess rules
 
     function acessPlatform(uint tokenId) external returns(bool){
-        require(balanceOf(msg.sender) >= 1 || userOf(tokenId) == msg.sender,
+        require(ownerOf(tokenId) == msg.sender || 
+        userOf(tokenId) == msg.sender || lifetimeAcess[msg.sender] == true,
         "you do not have access NFTs or your term to use has expired");
-        require(block.timestamp <= monthlyPayment[tokenId].timepay + timeForpay, 
-        "It is only possible to access the platform by paying the monthly fee.");
-        if(monthlyPayment[tokenId].valuepay < monthlyFee) revert completePayment();
+        require(block.timestamp <= monthlyPayment[tokenId].timepay + timeForpay 
+        && monthlyPayment[tokenId].valuepay > monthlyFee
+        || lifetimeAcess[msg.sender] == true, 
+        "It is only possible to access the platform by paying the monthly fee our LifetTimeAcess.");
         emit Accessdate(msg.sender,block.timestamp);
 
         return true;
@@ -87,6 +106,8 @@ contract BRcommunity is ERC4907Rent, Pausable, Ownable {
             timepay: block.timestamp,
             valuepay: msg.value
         });
+        limitRentcont[msg.sender] = 0;
+
         emit MonthlyPayment(tokenId,msg.sender,block.timestamp);
 
         return true;
@@ -116,12 +137,28 @@ contract BRcommunity is ERC4907Rent, Pausable, Ownable {
         monthlyFee = _monthlyFee;
     }
 
+    function setLifeTime(address _user, bool _lifetime) external onlyOwner {
+        lifetimeAcess[_user] = _lifetime;
+    }
+
     function setMaxdiscont(uint256 _maxDiscont) external onlyOwner {
         maxDiscount = _maxDiscont;
     }
 
+    function setTimeforpay(uint256 _timeforpay) external onlyOwner {
+        timeForpay = _timeforpay;
+    }
+
     function setGeneralURI(string memory _generalURI) external onlyOwner {
         generalURI = _generalURI;
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     function setCollectionURI(string memory _collectionCover) external onlyOwner{ ///set ipfs/CID/collection.json
